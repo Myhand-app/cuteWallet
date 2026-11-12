@@ -443,7 +443,8 @@ cl();ST();applyAll();go("home");toast("Demo profile loaded")}
         4) Auth > URL Configuration: add the URL where this file is hosted to "Redirect URLs"
         5) paste the project URL + anon/publishable key below, or in Settings > Cloud sync.
  Never put the service_role / secret key here. With no keys, the app runs in offline demo mode. */
-const SUPABASE_URL="",SUPABASE_ANON_KEY="";
+const SUPABASE_URL="https://fiicqemknsjrkozyqqjm.supabase.co",SUPABASE_ANON_KEY="";/* paste your anon/public key here, or in Settings > Cloud sync */
+const SB_TABLE="user_data";/* one row per user: id (uuid) + payload (jsonb) */
 /* Optional: Google OAuth client ID (…apps.googleusercontent.com). Enables the real Google account pop-up even without Supabase. */
 const GOOGLE_CLIENT_ID="";
 const IS_POPUP=window.name==="mwGoogle";/* this window is the Google sign-in pop-up */
@@ -510,7 +511,7 @@ async function resetPw(email){email=(email||"").trim();if(!okMail(email))return 
 const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:sbRedirect()});toast(error?sbMsg(error):"Reset link sent. Check your inbox.")}
 function newPwForm(){modal(`<h2>Set a new password</h2><input id="npw" type="password" autocomplete="new-password" placeholder="At least 6 characters"><button class="btn" style="width:100%;margin-top:8px" onclick="newPwGo()">Update password</button>`)}
 async function newPwGo(){const p=$("npw").value;if(p.length<6)return toast("Password needs 6+ characters");const{error}=await sb.auth.updateUser({password:p});if(error)return toast(sbMsg(error));cl();toast("Password updated")}
-/* ---- sync: one row per profile in public.wallet_profiles, last-write-wins by upd (ms), tombstones for deletes ---- */
+/* ---- sync: one row per user in public.user_data (payload holds all profiles), last-write-wins by upd (ms), tombstones for deletes ---- */
 function sbDirty(){if(SYNC&&SYNC.uid)schedulePush()}
 function sbTomb(id){try{const p=JSON.parse(localStorage.getItem(KEY(id))||"{}");if(p.cid){TOMB.add(p.cid);saveTomb();if(SYNC&&SYNC.uid)schedulePush()}}catch(e){}}
 function schedulePush(ms){if(!SYNC)return;clearTimeout(SYNC.timer);SYNC.timer=setTimeout(()=>SYNC.busy?SYNC.again=true:syncAll(),ms==null?1500:ms)}
@@ -523,24 +524,29 @@ function dropBlank(){for(const id of IDX.list.slice()){if(IDX.list.length<2)brea
 async function syncAll(){if(!sb||!SYNC.uid||SYNC.busy)return;if(!navigator.onLine){setStatus("offline");return}
 SYNC.busy=true;setStatus("syncing");let refresh=false;
 try{ST();const ux=SYNC.uid,own="sb_"+ux;IDX.upd=IDX.upd||{};
- const{data:meta,error:e1}=await sb.from("wallet_profiles").select("profile_id,upd,deleted");if(e1)throw e1;
- const rm=new Map(meta.map(r=>[r.profile_id,r])),L=new Map();
- IDX.list.forEach(id=>{const p=id===IDX.cur?S:loadP(id);if(p.cid)L.set(p.cid,id)});
- const rows=[...TOMB].map(c=>({user_id:ux,profile_id:c,data:null,upd:Date.now(),deleted:true})),need=[];
- for(const[c,r]of rm){const id=L.get(c);
+ /* payload = {meta:{cid:{upd,deleted}}, profiles:{cid:profileData}}; meta is fetched alone to keep checks cheap */
+ const{data:mr,error:e1}=await sb.from(SB_TABLE).select("meta:payload->meta").eq("id",ux).maybeSingle();if(e1)throw e1;
+ const meta=(mr&&mr.meta)||{};let full=null;
+ const getFull=async()=>{if(full)return full;const{data,error}=await sb.from(SB_TABLE).select("payload").eq("id",ux).maybeSingle();if(error)throw error;full=(data&&data.payload)||{};full.meta=full.meta||{};full.profiles=full.profiles||{};return full};
+ const L=new Map();IDX.list.forEach(id=>{const p=id===IDX.cur?S:loadP(id);if(p.cid)L.set(p.cid,id)});
+ const need=[];
+ for(const c in meta){const r=meta[c],id=L.get(c);
   if(r.deleted){if(id&&IDX.list.length>1&&(IDX.upd[id]||0)<=r.upd){if(id===IDX.cur)refresh=true;dropLocal(id)}continue}
   if(TOMB.has(c))continue;
   if(!id||r.upd>(IDX.upd[id]||0))need.push(c)}
- if(need.length){const{data:full,error:e2}=await sb.from("wallet_profiles").select("profile_id,data,upd").in("profile_id",need);if(e2)throw e2;
-  for(const r of full){if(!r.data)continue;const id=L.get(r.profile_id)||r.profile_id;localStorage.setItem(KEY(id),JSON.stringify(r.data));if(!IDX.list.includes(id))IDX.list.push(id);IDX.upd[id]=r.upd;LASTJ[id]=JSON.stringify(loadP(id));if(id===IDX.cur){S=loadP(id);refresh=true}}}
+ if(need.length){const f=await getFull();for(const c of need){const d=f.profiles[c];if(!d)continue;const id=L.get(c)||c;localStorage.setItem(KEY(id),JSON.stringify(d));if(!IDX.list.includes(id))IDX.list.push(id);IDX.upd[id]=meta[c].upd;LASTJ[id]=JSON.stringify(loadP(id));if(id===IDX.cur){S=loadP(id);refresh=true}}}
+ const push=[];
  for(const id of IDX.list.slice()){const p=id===IDX.cur?S:loadP(id);if(!p.onb||(p.authUid&&p.authUid!==own))continue;
   if(!p.cid||!p.authUid){p.cid=p.cid||uid()+uid();p.authUid=own;if(id===IDX.cur)ST();else{localStorage.setItem(KEY(id),JSON.stringify(p));LASTJ[id]=JSON.stringify(loadP(id))}IDX.upd[id]=Date.now()}
-  const r=rm.get(p.cid),lu=IDX.upd[id]||(IDX.upd[id]=Date.now());
-  if(!r||lu>r.upd)rows.push({user_id:ux,profile_id:p.cid,data:p,upd:lu,deleted:false})}
- if(rows.length){const{error:e3}=await sb.from("wallet_profiles").upsert(rows,{onConflict:"user_id,profile_id"});if(e3)throw e3;TOMB.clear();saveTomb()}
+  const r=meta[p.cid],lu=IDX.upd[id]||(IDX.upd[id]=Date.now());
+  if(!r||lu>r.upd)push.push({c:p.cid,p,lu})}
+ if(push.length||TOMB.size){const f=await getFull();
+  for(const{c,p,lu}of push){f.profiles[c]=p;f.meta[c]={upd:lu,deleted:false}}
+  for(const c of TOMB){delete f.profiles[c];f.meta[c]={upd:Date.now(),deleted:true}}
+  const{error:e3}=await sb.from(SB_TABLE).upsert({id:ux,payload:f});if(e3)throw e3;TOMB.clear();saveTomb()}
  localStorage.setItem("mw_idx",JSON.stringify(IDX));SYNC.last=Date.now();setStatus("ok");if(refresh)applyAll()
 }catch(e){setStatus("error",sbMsg(e))}finally{SYNC.busy=false;if(SYNC.again){SYNC.again=false;schedulePush(300)}}}
-function subRT(){unsubRT();try{SYNC.ch=sb.channel("wallet-"+SYNC.uid).on("postgres_changes",{event:"*",schema:"public",table:"wallet_profiles",filter:"user_id=eq."+SYNC.uid},()=>schedulePush(800)).subscribe()}catch(e){}}
+function subRT(){unsubRT();try{SYNC.ch=sb.channel("wallet-"+SYNC.uid).on("postgres_changes",{event:"*",schema:"public",table:SB_TABLE,filter:"id=eq."+SYNC.uid},()=>schedulePush(800)).subscribe()}catch(e){}}
 function unsubRT(){try{if(SYNC.ch&&sb){sb.removeChannel(SYNC.ch)}}catch(e){}SYNC.ch=null}
 addEventListener("online",()=>schedulePush(500));document.addEventListener("visibilitychange",()=>{if(!document.hidden)schedulePush(400)});
 /* ---- Settings > Cloud sync ---- */
