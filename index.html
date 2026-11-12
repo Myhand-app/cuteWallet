@@ -310,12 +310,12 @@ u.profile=id;u.at=Date.now();setSess(u);$("auth").style.display="none";cl();ST()
 if(!S.onb)showOb();else{setTimeout(()=>ding(),50);toast("Welcome, "+(p.name||"friend"))}}
 function googleForm(){return new Promise(res=>{window._gr=res;modal(`<div style="text-align:center">${GLOGO}<h2 style="margin:8px 0 2px">Sign in with Google</h2><p class="mut" style="margin-bottom:12px">Demo mode. Add a Google client ID in Settings → Cloud sync to get the real Google account chooser.</p></div><label class="lb">Name</label><input id="gn" autocomplete="name" placeholder="Your name"><label class="lb">Google email</label><input id="ge" type="email" autocomplete="email" placeholder="you@gmail.com"><button class="btn" style="width:100%;margin-top:6px" onclick="gOk()">Continue</button>`)})}
 function gOk(){const e=$("ge").value.trim().toLowerCase();if(!okMail(e))return toast("Enter a valid Google email");const n=$("gn").value.trim()||e.split("@")[0];cl();window._gr({name:n,email:e})}
-async function demoGoogle(){
+async function demoGoogle(){if(noDemo(1))return;
 // Offline demo path (used when Supabase is not configured)
 //   Supabase: await supabase.auth.signInWithOAuth({provider:"google"})
 //   Firebase: const r=await signInWithPopup(auth,new GoogleAuthProvider()); user=r.user
 const g=await googlePicker();if(!g)return;finishLogin({type:"google",uid:"g_"+g.email,name:g.name,email:g.email,pic:g.pic||""})}
-async function demoEmail(email,pass){email=(email||"").trim().toLowerCase();
+async function demoEmail(email,pass){if(noDemo(0))return;email=(email||"").trim().toLowerCase();
 if(!okMail(email))return toast("Enter a valid email");if(!pass)return toast("Enter your password");
 // Offline demo path (used when Supabase is not configured)
 //   Supabase: await supabase.auth.signInWithPassword({email,password:pass})
@@ -323,7 +323,7 @@ if(!okMail(email))return toast("Enter a valid email");if(!pass)return toast("Ent
 const a=USERS()[email];if(!a)return toast("No account found. Create one first.");
 if(a.h!==await hashPw(email,pass))return toast("Wrong email or password");
 finishLogin({type:"email",uid:a.uid,name:a.name,email})}
-async function demoSignUp(name,email,pass){email=(email||"").trim().toLowerCase();
+async function demoSignUp(name,email,pass){if(noDemo(0))return;email=(email||"").trim().toLowerCase();
 if(!okMail(email))return toast("Enter a valid email");if((pass||"").length<6)return toast("Password needs 6+ characters");
 // Offline demo path (used when Supabase is not configured)
 //   Supabase: await supabase.auth.signUp({email,password:pass,options:{data:{name}}})
@@ -331,11 +331,11 @@ if(!okMail(email))return toast("Enter a valid email");if((pass||"").length<6)ret
 const us=USERS();if(us[email])return toast("Account exists. Sign in instead.");
 const n=(name||"").trim()||email.split("@")[0];us[email]={uid:"e_"+email,name:n,h:await hashPw(email,pass)};saveUsers(us);
 finishLogin({type:"email",uid:"e_"+email,name:n,email})}
-function demoMagic(email){email=(email||"").trim().toLowerCase();if(!okMail(email))return toast("Enter your email first");
+function demoMagic(email){if(noDemo(0))return;email=(email||"").trim().toLowerCase();if(!okMail(email))return toast("Enter your email first");
 // Offline demo path (used when Supabase is not configured)
 //   Supabase: await supabase.auth.signInWithOtp({email})   Firebase: sendSignInLinkToEmail(auth,email,settings)
 const a=USERS()[email];toast("Demo: magic link skipped, signing you in");finishLogin({type:"email",uid:"e_"+email,name:a?a.name:email.split("@")[0],email})}
-function demoGuest(){
+function demoGuest(){if(noDemo(0))return;
 // Offline demo path (used when Supabase is not configured)
 //   Supabase: await supabase.auth.signInAnonymously()   Firebase: await signInAnonymously(auth)
 finishLogin({type:"guest",uid:"guest_"+uid(),name:"Guest",email:""})}
@@ -343,9 +343,9 @@ function logoutAsk(){modal(`<h2>Log out?</h2><p class="mut" style="margin-bottom
 /* Guest -> real account: keeps the same profile and data */
 function upgrade(u){ // TODO: Supabase updateUser / linkIdentity, Firebase linkWithCredential
 u.at=Date.now();u.profile=IDX.cur;S.authUid=u.uid;if(!S.prof.name||S.prof.name==="Guest")S.prof.name=u.name;if(!S.prof.email)S.prof.email=u.email;setSess(u);ST();cl();render();toast("Account linked")}
-async function demoLinkGoogle(){const g=await googlePicker();if(!g)return;upgrade({type:"google",uid:"g_"+g.email,name:g.name,email:g.email})}
+async function demoLinkGoogle(){if(noDemo(1))return;const g=await googlePicker();if(!g)return;upgrade({type:"google",uid:"g_"+g.email,name:g.name,email:g.email})}
 function linkEmail(){modal(`<h2>Add email &amp; password</h2><p class="mut">Keep your current data and sign in with email next time.</p><label class="lb">Name</label><input id="ln" value="${esc(S.prof.name==="Guest"?"":S.prof.name)}" placeholder="Your name"><label class="lb">Email</label><input id="le" type="email" autocomplete="email" placeholder="you@example.com"><label class="lb">Password</label><input id="lp" type="password" autocomplete="new-password" placeholder="At least 6 characters"><button class="btn" style="width:100%;margin-top:6px" onclick="linkEmailGo()">Link account</button>`)}
-async function demoLinkEmailGo(){const e=$("le").value.trim().toLowerCase(),p=$("lp").value;if(!okMail(e))return toast("Enter a valid email");if(p.length<6)return toast("Password needs 6+ characters");
+async function demoLinkEmailGo(){if(noDemo(0))return;const e=$("le").value.trim().toLowerCase(),p=$("lp").value;if(!okMail(e))return toast("Enter a valid email");if(p.length<6)return toast("Password needs 6+ characters");
 const us=USERS();if(us[e])return toast("That email already has an account");const n=$("ln").value.trim()||e.split("@")[0];us[e]={uid:"e_"+e,name:n,h:await hashPw(e,p)};saveUsers(us);upgrade({type:"email",uid:"e_"+e,name:n,email:e})}
 function authType(){const a=S.authUid||"";if(a.startsWith("sb_"))return(SESS&&SESS.type)||"email";return a.startsWith("g_")?"google":a.startsWith("e_")?"email":"guest"}
 function AUTHCARD(){const u=authType(),p=S.prof;
@@ -457,7 +457,11 @@ const TOMB=new Set((()=>{try{return JSON.parse(localStorage.getItem("mw_tomb"))|
 const saveTomb=()=>{try{localStorage.setItem("mw_tomb",JSON.stringify([...TOMB]))}catch(e){}};
 const sbMsg=e=>(e&&e.message)||"Something went wrong";
 const sbRedirect=()=>location.origin+location.pathname;
-function sbReady(){if(sb)return true;if(SB_ON)toast("Cloud unreachable. Using offline demo mode.");return false}
+/* Once a Supabase URL/key exists, never fake a login: ask for the missing piece instead. g=1: a Google client ID also counts as "real". */
+function noDemo(g){if(g&&SB_CFG.gid)return false;if(!(SB_CFG.url||SB_ON))return false;
+if(!SB_ON)keyModal();else toast("Supabase is unreachable. Check your connection and reload.");return true}
+function keyModal(){modal(`<h2>Connect Supabase</h2><p class="mut" style="margin-bottom:8px">Real sign-in needs your project's <b>anon / publishable</b> key. Find it in Supabase → Project Settings → API.</p><label class="lb">Project URL</label><input id="sbu" value="${esc(SB_CFG.url)}" placeholder="https://xxxx.supabase.co"><label class="lb">Anon / publishable key</label><input id="sbk" placeholder="eyJ... or sb_publishable_..." value="${esc(SB_CFG.key)}"><input id="sbg" type="hidden" value="${esc(SB_CFG.gid)}"><button class="btn" style="width:100%;margin-top:8px" onclick="sbCfgSave()">Save &amp; reload</button>`)}
+function sbReady(){if(sb)return true;return false}
 function loadScript(src){return new Promise((res,rej)=>{const e=document.createElement("script");e.src=src;e.onload=res;e.onerror=()=>rej(new Error("Could not load "+src));document.head.appendChild(e)})}
 const GIS="https://accounts.google.com/gsi/client";
 function googlePicker(){return SB_CFG.gid?gisPick():googleForm()}
