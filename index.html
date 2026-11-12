@@ -139,7 +139,7 @@ if(!IDX||!IDX.list||!IDX.list.length)IDX={cur:"p1",list:["p1"]};
 const loadP=id=>{const d=JSON.parse(JSON.stringify(D));try{return Object.assign(d,JSON.parse(localStorage.getItem(KEY(id))||"{}"))}catch(e){return d}};
 let S=loadP(IDX.cur);
 const $=i=>document.getElementById(i),t=k=>(T[S.lang]||T.en)[k]||T.en[k]||k;
-const ST=()=>{try{localStorage.setItem(KEY(IDX.cur),JSON.stringify(S));localStorage.setItem("mw_idx",JSON.stringify(IDX))}catch(e){toast("Storage is full. Export a backup and remove some photos.")}};
+const LASTJ={};const ST=()=>{try{const j=JSON.stringify(S),id=IDX.cur;if(LASTJ[id]===undefined)LASTJ[id]=JSON.stringify(loadP(id));if(LASTJ[id]!==j){LASTJ[id]=j;(IDX.upd=IDX.upd||{})[id]=Date.now();sbDirty(id)}localStorage.setItem(KEY(id),j);localStorage.setItem("mw_idx",JSON.stringify(IDX))}catch(e){toast("Storage is full. Export a backup and remove some photos.")}};
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmt=n=>{try{return new Intl.NumberFormat(undefined,{style:"currency",currency:S.cur}).format(n)}catch(e){return S.cur+" "+n}};
 const iso=d=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10),today=()=>iso(new Date());
@@ -258,7 +258,7 @@ return `<div class="card prof">${avatar(p)}<div class="grow"><b>${esc(p.name||"G
 +it("gg",t("limit"),S.limit?fmt(S.limit):"Not set",`<input id="dl" type="number" min="0" placeholder="0 = off" value="${S.limit||""}"><button class="btn" onclick="S.limit=parseFloat($('dl').value)||0;ST();toast('Limit saved');render()">${t("save")}</button>`))
 +sec("Categories",it("tag","Expense categories",S.cat.exp.length+" categories",cat("exp"))+it("tag","Income categories",S.cat.inc.length+" categories",cat("inc")))
 +sec("Money",acctSet()+budSet()+recSet()+xfSet())+sec("Tools",it("calc","Calculator","Quick calculations",`<input id="cd" readonly value="" style="text-align:right;font-size:20px"><div class="calc">${["7","8","9","/","4","5","6","*","1","2","3","-","0",".","=","+","C","(",")","DEL"].map(k=>`<button onclick="calc('${k}')">${k}</button>`).join("")}</div>`)+it("cal","Calendar","Notes on dates, shown in Reports",'<div id="cal"></div>'))
-+sec("Data",it("bk","Backup & import","Save to or restore from a file",`<p class="mut" style="margin-bottom:10px">Your backup includes transactions, goals, photos and settings of this profile.</p><button class="btn" style="width:100%;margin-bottom:8px" onclick="exportData()">${I.dl} Export backup file</button><label class="btn s" style="width:100%">${I.ul} Import from file<input type="file" accept=".json,application/json" hidden onchange="importFile(this)"></label>`)+it("dl","Export to CSV","Spreadsheet-ready file",`<p class="mut" style="margin-bottom:10px">All transactions and transfers as a .csv that opens in Excel or Google Sheets.</p><button class="btn" style="width:100%" onclick="exportCSV()">${I.dl} Export to CSV</button>`)+it("cloud","Demo data","Sample profile",`<p class="mut" style="margin-bottom:10px">Creates a separate <b>Demo</b> profile with 90 days of transactions, transfers, budgets, bills, goals and receipts. Your own data is not touched.</p><button class="btn" style="width:100%" onclick="mockAsk()">${I.cloud} Load demo data</button>`)+it("rs","Reset","Delete all transactions",`<p class="mut" style="margin-bottom:8px">Deletes all transactions and sets balance to 0.</p><button class="btn r" onclick="doReset()">Reset transactions</button>`))
++sec("Data",it("bk","Backup & import","Save to or restore from a file",`<p class="mut" style="margin-bottom:10px">Your backup includes transactions, goals, photos and settings of this profile.</p><button class="btn" style="width:100%;margin-bottom:8px" onclick="exportData()">${I.dl} Export backup file</button><label class="btn s" style="width:100%">${I.ul} Import from file<input type="file" accept=".json,application/json" hidden onchange="importFile(this)"></label>`)+it("dl","Export to CSV","Spreadsheet-ready file",`<p class="mut" style="margin-bottom:10px">All transactions and transfers as a .csv that opens in Excel or Google Sheets.</p><button class="btn" style="width:100%" onclick="exportCSV()">${I.dl} Export to CSV</button>`)+cfgSet()+it("cloud","Demo data","Sample profile",`<p class="mut" style="margin-bottom:10px">Creates a separate <b>Demo</b> profile with 90 days of transactions, transfers, budgets, bills, goals and receipts. Your own data is not touched.</p><button class="btn" style="width:100%" onclick="mockAsk()">${I.cloud} Load demo data</button>`)+it("rs","Reset","Delete all transactions",`<p class="mut" style="margin-bottom:8px">Deletes all transactions and sets balance to 0.</p><button class="btn r" onclick="doReset()">Reset transactions</button>`))
 +sec("Support",it("info","About","myWallet v2.0",`<p>myWallet is a simple, private money tracker. Record income and expenses across bank, cash and e-wallet, stay within a daily limit, and grow savings goals while a plant grows with you.</p><p class="mut" style="margin-top:8px">Your data stays on this device. Version 2.0.</p>`)+it("help","FAQ","Common questions",FAQ.map(([q,a])=>`<details class="fq"><summary><b>${q}</b></summary><div class="mut">${a}</div></details>`).join(""))+it("mail","Contact us","We would love your feedback",`<input id="cs" placeholder="Subject"><textarea id="cm" rows="4" placeholder="Your message"></textarea><button class="btn" style="width:100%" onclick="sendMsg()">${I.mail} Send message</button><p class="mut" style="margin-top:8px">Or email us at <b>${CONTACT}</b></p>`))
 +`<p class="mut" style="text-align:center;margin:14px 0 20px">myWallet v2.0</p>`}
 function sendMsg(){const m=$("cm").value.trim();if(!m)return toast("Write a message first");location.href="mailto:"+CONTACT+"?subject="+encodeURIComponent($("cs").value||"myWallet feedback")+"&body="+encodeURIComponent(m+"\n\n"+(S.prof.name||""))}
@@ -288,11 +288,11 @@ function svImg(id){const g=S.sv.find(z=>z.id===id),f=`S.sv.find(z=>z.id==='${id}
 function applyAll(){ACC=S.accts;if(SESS)setSess(Object.assign({},SESS,{type:authType(),uid:S.authUid||"",name:S.prof.name,email:S.prof.email,profile:IDX.cur}));applyTheme();document.documentElement.style.setProperty("--ac",S.ac);nav();render()}
 function switchP(id){ST();IDX.cur=id;S=loadP(id);ST();cl();applyAll();toast("Switched to "+(S.prof.name||"profile"))}
 function addP(){ST();const th=S.theme,ac=S.ac;window._prev=IDX.cur;const id=uid();IDX.list.push(id);IDX.cur=id;S=loadP(id);S.theme=th;S.ac=ac;S.onb=0;ST();cl();applyAll();showOb()}
-function obCancel(){const id=IDX.cur;IDX.list=IDX.list.filter(x=>x!==id);try{localStorage.removeItem(KEY(id))}catch(e){}IDX.cur=window._prev;S=loadP(IDX.cur);window._prev=null;ST();$("ob").style.display="none";applyAll()}
-function delP(id){ask("Delete this profile and all its data?","Delete",()=>{IDX.list=IDX.list.filter(x=>x!==id);try{localStorage.removeItem(KEY(id))}catch(e){}if(IDX.cur===id){IDX.cur=IDX.list[0];S=loadP(IDX.cur)}ST();applyAll()})}
-function ACCT(){return it("swap","Profiles",IDX.list.length+(IDX.list.length>1?" profiles":" profile")+" on this device",IDX.list.map(id=>{const q=(id===IDX.cur?S:loadP(id)),p=q.prof||{},on=id===IDX.cur;return `<div class="row" ${on?"":`onclick="switchP('${id}')"`}>${avatar(p,"av sm")}<div class="grow"><b>${esc(p.name||"New profile")}</b><span class="mut">${(a=>a.startsWith("g_")?"Google":a.startsWith("e_")?"Email":"Guest")(q.authUid||"")}${p.email?" · "+esc(p.email):""}</span></div>${on?'<span class="pill2">Active</span>':""}${IDX.list.length>1?`<button class="x" aria-label="Delete profile" onclick="event.stopPropagation();delP('${id}')">${I.tr}</button>`:""}</div>`}).join("")+`<button class="btn s" style="width:100%;margin-top:10px" onclick="addP()">${I.pl} Add guest profile</button>`)}
+function obCancel(){const id=IDX.cur;IDX.list=IDX.list.filter(x=>x!==id);sbTomb(id);try{localStorage.removeItem(KEY(id))}catch(e){}IDX.cur=window._prev;S=loadP(IDX.cur);window._prev=null;ST();$("ob").style.display="none";applyAll()}
+function delP(id){ask("Delete this profile and all its data?","Delete",()=>{IDX.list=IDX.list.filter(x=>x!==id);sbTomb(id);try{localStorage.removeItem(KEY(id))}catch(e){}if(IDX.cur===id){IDX.cur=IDX.list[0];S=loadP(IDX.cur)}ST();applyAll()})}
+function ACCT(){return it("swap","Profiles",IDX.list.length+(IDX.list.length>1?" profiles":" profile")+" on this device",IDX.list.map(id=>{const q=(id===IDX.cur?S:loadP(id)),p=q.prof||{},on=id===IDX.cur;return `<div class="row" ${on?"":`onclick="switchP('${id}')"`}>${avatar(p,"av sm")}<div class="grow"><b>${esc(p.name||"New profile")}</b><span class="mut">${(a=>a.startsWith("sb_")?({google:"Google",email:"Email"}[SESS&&SESS.type]||"Guest"):a.startsWith("g_")?"Google":a.startsWith("e_")?"Email":"Guest")(q.authUid||"")}${p.email?" · "+esc(p.email):""}</span></div>${on?'<span class="pill2">Active</span>':""}${IDX.list.length>1?`<button class="x" aria-label="Delete profile" onclick="event.stopPropagation();delP('${id}')">${I.tr}</button>`:""}</div>`}).join("")+`<button class="btn s" style="width:100%;margin-top:10px" onclick="addP()">${I.pl} Add guest profile</button>`)}
 async function exportData(){const d=JSON.stringify(S);try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([d],{type:"application/json"}));a.download="mywallet-backup-"+today()+".json";document.body.appendChild(a);a.click();a.remove();toast("Backup saved")}catch(e){try{await navigator.clipboard.writeText(d);toast("Backup copied to clipboard")}catch(x){toast("Could not export in this view")}}}
-function importFile(el){const f=el.files&&el.files[0];el.value="";if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!Array.isArray(o.tx))throw 0;ask("Replace current data with this backup?","Import",()=>{S=Object.assign(JSON.parse(JSON.stringify(D)),o);S.onb=1;S.authUid=(SESS||{}).uid;ST();applyAll();toast("Backup imported")})}catch(e){toast("That file is not a valid myWallet backup")}};r.readAsText(f)}
+function importFile(el){const f=el.files&&el.files[0];el.value="";if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!Array.isArray(o.tx))throw 0;ask("Replace current data with this backup?","Import",()=>{S=Object.assign(JSON.parse(JSON.stringify(D)),o);S.onb=1;S.authUid=SESS&&SESS.sbid?"sb_"+SESS.sbid:(SESS||{}).uid;delete S.cid;ST();applyAll();toast("Backup imported")})}catch(e){toast("That file is not a valid myWallet backup")}};r.readAsText(f)}
 /* ---------- AUTH (session in localStorage "mw_sess"; each account maps to a local profile via S.authUid) ---------- */
 const GLOGO='<svg width="20" height="20" viewBox="0 0 48 48" style="flex:none"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.2 5.4-4.7 7.1l7.6 5.9c4.4-4.1 6.9-10.1 6.9-17.5z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 010-9.4l-7.9-6.1a24 24 0 000 21.6z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>';
 let SESS=null;try{SESS=JSON.parse(localStorage.getItem("mw_sess"))}catch(e){}
@@ -305,57 +305,55 @@ function setSess(u){SESS=u;try{u?localStorage.setItem("mw_sess",JSON.stringify(u
 function finishLogin(u){ST();const th=S.theme,ac=S.ac;let id=IDX.list.find(i=>loadP(i).authUid===u.uid),nw=0;
 if(!id){if(S.authUid){id=uid();IDX.list.push(id);nw=1}else id=IDX.cur}
 IDX.cur=id;S=loadP(id);if(nw){S.theme=th;S.ac=ac}S.authUid=u.uid;const p=S.prof;
-if(u.type==="guest"){if(!p.name)p.name="Guest";S.onb=1}else{if(!p.name||p.name==="Guest")p.name=u.name||"";if(!p.email)p.email=u.email||""}
+if(u.type==="guest"){if(!p.name)p.name="Guest";S.onb=1}else{if(!p.name||p.name==="Guest")p.name=u.name||"";if(!p.email)p.email=u.email||"";if(!p.pic&&u.pic)p.pic=u.pic}
 u.profile=id;u.at=Date.now();setSess(u);$("auth").style.display="none";cl();ST();applyAll();
 if(!S.onb)showOb();else{setTimeout(()=>ding(),50);toast("Welcome, "+(p.name||"friend"))}}
-function googlePicker(){return new Promise(res=>{window._gr=res;modal(`<div style="text-align:center">${GLOGO}<h2 style="margin:8px 0 2px">Sign in with Google</h2><p class="mut" style="margin-bottom:12px">Demo mode: no real Google connection yet. Enter an account to simulate sign-in.</p></div><label class="lb">Name</label><input id="gn" autocomplete="name" placeholder="Your name"><label class="lb">Google email</label><input id="ge" type="email" autocomplete="email" placeholder="you@gmail.com"><button class="btn" style="width:100%;margin-top:6px" onclick="gOk()">Continue</button>`)})}
+function googleForm(){return new Promise(res=>{window._gr=res;modal(`<div style="text-align:center">${GLOGO}<h2 style="margin:8px 0 2px">Sign in with Google</h2><p class="mut" style="margin-bottom:12px">Demo mode. Add a Google client ID in Settings → Cloud sync to get the real Google account chooser.</p></div><label class="lb">Name</label><input id="gn" autocomplete="name" placeholder="Your name"><label class="lb">Google email</label><input id="ge" type="email" autocomplete="email" placeholder="you@gmail.com"><button class="btn" style="width:100%;margin-top:6px" onclick="gOk()">Continue</button>`)})}
 function gOk(){const e=$("ge").value.trim().toLowerCase();if(!okMail(e))return toast("Enter a valid Google email");const n=$("gn").value.trim()||e.split("@")[0];cl();window._gr({name:n,email:e})}
-async function loginWithGoogle(){
-// TODO: Replace with Supabase / Firebase auth logic later
+async function demoGoogle(){
+// Offline demo path (used when Supabase is not configured)
 //   Supabase: await supabase.auth.signInWithOAuth({provider:"google"})
 //   Firebase: const r=await signInWithPopup(auth,new GoogleAuthProvider()); user=r.user
-const g=await googlePicker();if(!g)return;finishLogin({type:"google",uid:"g_"+g.email,name:g.name,email:g.email})}
-async function loginWithEmail(email,pass){email=(email||"").trim().toLowerCase();
+const g=await googlePicker();if(!g)return;finishLogin({type:"google",uid:"g_"+g.email,name:g.name,email:g.email,pic:g.pic||""})}
+async function demoEmail(email,pass){email=(email||"").trim().toLowerCase();
 if(!okMail(email))return toast("Enter a valid email");if(!pass)return toast("Enter your password");
-// TODO: Replace with Supabase / Firebase auth logic later
+// Offline demo path (used when Supabase is not configured)
 //   Supabase: await supabase.auth.signInWithPassword({email,password:pass})
 //   Firebase: await signInWithEmailAndPassword(auth,email,pass)
 const a=USERS()[email];if(!a)return toast("No account found. Create one first.");
 if(a.h!==await hashPw(email,pass))return toast("Wrong email or password");
 finishLogin({type:"email",uid:a.uid,name:a.name,email})}
-async function signUpWithEmail(name,email,pass){email=(email||"").trim().toLowerCase();
+async function demoSignUp(name,email,pass){email=(email||"").trim().toLowerCase();
 if(!okMail(email))return toast("Enter a valid email");if((pass||"").length<6)return toast("Password needs 6+ characters");
-// TODO: Replace with Supabase / Firebase auth logic later
+// Offline demo path (used when Supabase is not configured)
 //   Supabase: await supabase.auth.signUp({email,password:pass,options:{data:{name}}})
 //   Firebase: await createUserWithEmailAndPassword(auth,email,pass)
 const us=USERS();if(us[email])return toast("Account exists. Sign in instead.");
 const n=(name||"").trim()||email.split("@")[0];us[email]={uid:"e_"+email,name:n,h:await hashPw(email,pass)};saveUsers(us);
 finishLogin({type:"email",uid:"e_"+email,name:n,email})}
-function sendMagicLink(email){email=(email||"").trim().toLowerCase();if(!okMail(email))return toast("Enter your email first");
-// TODO: Replace with Supabase / Firebase auth logic later
+function demoMagic(email){email=(email||"").trim().toLowerCase();if(!okMail(email))return toast("Enter your email first");
+// Offline demo path (used when Supabase is not configured)
 //   Supabase: await supabase.auth.signInWithOtp({email})   Firebase: sendSignInLinkToEmail(auth,email,settings)
 const a=USERS()[email];toast("Demo: magic link skipped, signing you in");finishLogin({type:"email",uid:"e_"+email,name:a?a.name:email.split("@")[0],email})}
-function loginAsGuest(){
-// TODO: Replace with Supabase / Firebase auth logic later
+function demoGuest(){
+// Offline demo path (used when Supabase is not configured)
 //   Supabase: await supabase.auth.signInAnonymously()   Firebase: await signInAnonymously(auth)
 finishLogin({type:"guest",uid:"guest_"+uid(),name:"Guest",email:""})}
-function logout(){ // TODO: Replace with Supabase / Firebase auth logic later (supabase.auth.signOut() / signOut(auth))
-ST();setSess(null);cl();showAuth()}
 function logoutAsk(){modal(`<h2>Log out?</h2><p class="mut" style="margin-bottom:14px">Your data stays on this device and returns when you sign back in.</p><div class="g2"><button class="btn s" onclick="cl()">Cancel</button><button class="btn r" onclick="logout()">Log Out</button></div>`)}
 /* Guest -> real account: keeps the same profile and data */
 function upgrade(u){ // TODO: Supabase updateUser / linkIdentity, Firebase linkWithCredential
 u.at=Date.now();u.profile=IDX.cur;S.authUid=u.uid;if(!S.prof.name||S.prof.name==="Guest")S.prof.name=u.name;if(!S.prof.email)S.prof.email=u.email;setSess(u);ST();cl();render();toast("Account linked")}
-async function linkGoogle(){const g=await googlePicker();if(!g)return;upgrade({type:"google",uid:"g_"+g.email,name:g.name,email:g.email})}
+async function demoLinkGoogle(){const g=await googlePicker();if(!g)return;upgrade({type:"google",uid:"g_"+g.email,name:g.name,email:g.email})}
 function linkEmail(){modal(`<h2>Add email &amp; password</h2><p class="mut">Keep your current data and sign in with email next time.</p><label class="lb">Name</label><input id="ln" value="${esc(S.prof.name==="Guest"?"":S.prof.name)}" placeholder="Your name"><label class="lb">Email</label><input id="le" type="email" autocomplete="email" placeholder="you@example.com"><label class="lb">Password</label><input id="lp" type="password" autocomplete="new-password" placeholder="At least 6 characters"><button class="btn" style="width:100%;margin-top:6px" onclick="linkEmailGo()">Link account</button>`)}
-async function linkEmailGo(){const e=$("le").value.trim().toLowerCase(),p=$("lp").value;if(!okMail(e))return toast("Enter a valid email");if(p.length<6)return toast("Password needs 6+ characters");
+async function demoLinkEmailGo(){const e=$("le").value.trim().toLowerCase(),p=$("lp").value;if(!okMail(e))return toast("Enter a valid email");if(p.length<6)return toast("Password needs 6+ characters");
 const us=USERS();if(us[e])return toast("That email already has an account");const n=$("ln").value.trim()||e.split("@")[0];us[e]={uid:"e_"+e,name:n,h:await hashPw(e,p)};saveUsers(us);upgrade({type:"email",uid:"e_"+e,name:n,email:e})}
-function authType(){const a=S.authUid||"";return a.startsWith("g_")?"google":a.startsWith("e_")?"email":"guest"}
+function authType(){const a=S.authUid||"";if(a.startsWith("sb_"))return(SESS&&SESS.type)||"email";return a.startsWith("g_")?"google":a.startsWith("e_")?"email":"guest"}
 function AUTHCARD(){const u=authType(),p=S.prof;
-if(u==="guest")return `<div style="padding:14px 0;border-bottom:1px solid var(--bd)"><div class="prof">${avatar(p,"av sm")}<div class="grow"><b>${esc(p.name||"Guest")}</b><span class="mut">Data is stored on this device only</span></div><span class="pill2">Guest Account</span></div><button class="btn s" style="width:100%;margin-top:12px" onclick="linkGoogle()">${GLOGO} Link Google Account</button><button class="btn s" style="width:100%;margin-top:8px" onclick="linkEmail()">${I.lock} Add Email &amp; Password</button></div>`;
-return `<div style="padding:14px 0;border-bottom:1px solid var(--bd)"><div class="prof">${avatar(p)}<div class="grow"><b>${esc(p.name)}</b><span class="mut">${esc(p.email)}</span><span class="pill2" style="display:inline-block;width:fit-content;margin-top:4px">${u==="google"?"Google account":"Email account"}</span></div></div><button class="btn s" style="width:100%;margin-top:12px" onclick="logoutAsk()">${I.out} Log Out</button></div>`}
+if(u==="guest")return `<div style="padding:14px 0;border-bottom:1px solid var(--bd)"><div class="prof">${avatar(p,"av sm")}<div class="grow"><b>${esc(p.name||"Guest")}</b><span class="mut">Data is stored on this device only</span></div><span class="pill2">Guest Account</span></div><button class="btn s" style="width:100%;margin-top:12px" onclick="linkGoogle()">${GLOGO} Link Google Account</button><button class="btn s" style="width:100%;margin-top:8px" onclick="linkEmail()">${I.lock} Add Email &amp; Password</button>${syncBadge()}</div>`;
+return `<div style="padding:14px 0;border-bottom:1px solid var(--bd)"><div class="prof">${avatar(p)}<div class="grow"><b>${esc(p.name)}</b><span class="mut">${esc(p.email)}</span><span class="pill2" style="display:inline-block;width:fit-content;margin-top:4px">${u==="google"?"Google account":"Email account"}</span></div></div><button class="btn s" style="width:100%;margin-top:12px" onclick="logoutAsk()">${I.out} Log Out</button>${syncBadge()}</div>`}
 let _am="in";
 function showAuth(v){const a=$("auth");a.style.display="flex";
-if(v==="email"){a.innerHTML=`<div class="auc"><button class="x" style="margin-left:-6px" onclick="showAuth()" aria-label="Back">${I.lf}</button><div class="obl" style="margin:8px 0 14px">${I.mail}</div><h2>${_am==="up"?"Create account":"Welcome back"}</h2><p class="mut" style="margin-bottom:14px">${_am==="up"?"Sign up with your email and a password.":"Sign in with your email and password."}</p><div class="seg"><button class="${_am==="in"?"on":""}" onclick="_am='in';showAuth('email')">Sign in</button><button class="${_am==="up"?"on":""}" onclick="_am='up';showAuth('email')">Create account</button></div><form onsubmit="event.preventDefault();authGo()">${_am==="up"?'<label class="lb">Name</label><input id="an" autocomplete="name" placeholder="Your name">':""}<label class="lb">Email</label><input id="ae" type="email" autocomplete="email" placeholder="you@example.com"><label class="lb">Password</label><div class="pw"><input id="ap" type="password" autocomplete="${_am==="up"?"new-password":"current-password"}" placeholder="${_am==="up"?"At least 6 characters":"Your password"}"><button type="button" class="x" onclick="const i=$('ap');i.type=i.type==='password'?'text':'password'" aria-label="Show password">${IV.eye}</button></div><button class="btn aub" type="submit">${_am==="up"?"Create account":"Sign in"}</button></form>${_am==="in"?`<div class="or">or</div><button class="btn s aub" onclick="sendMagicLink($('ae').value)">${I.mail} Email me a magic link instead</button>`:""}</div>`;return}
+if(v==="email"){a.innerHTML=`<div class="auc"><button class="x" style="margin-left:-6px" onclick="showAuth()" aria-label="Back">${I.lf}</button><div class="obl" style="margin:8px 0 14px">${I.mail}</div><h2>${_am==="up"?"Create account":"Welcome back"}</h2><p class="mut" style="margin-bottom:14px">${_am==="up"?"Sign up with your email and a password.":"Sign in with your email and password."}</p><div class="seg"><button class="${_am==="in"?"on":""}" onclick="_am='in';showAuth('email')">Sign in</button><button class="${_am==="up"?"on":""}" onclick="_am='up';showAuth('email')">Create account</button></div><form onsubmit="event.preventDefault();authGo()">${_am==="up"?'<label class="lb">Name</label><input id="an" autocomplete="name" placeholder="Your name">':""}<label class="lb">Email</label><input id="ae" type="email" autocomplete="email" placeholder="you@example.com"><label class="lb">Password</label><div class="pw"><input id="ap" type="password" autocomplete="${_am==="up"?"new-password":"current-password"}" placeholder="${_am==="up"?"At least 6 characters":"Your password"}"><button type="button" class="x" onclick="const i=$('ap');i.type=i.type==='password'?'text':'password'" aria-label="Show password">${IV.eye}</button></div><button class="btn aub" type="submit">${_am==="up"?"Create account":"Sign in"}</button></form>${_am==="in"?`<button class="lnk" style="width:100%" onclick="resetPw($('ae').value)">Forgot password?</button>`:""}${_am==="in"?`<div class="or">or</div><button class="btn s aub" onclick="sendMagicLink($('ae').value)">${I.mail} Email me a magic link instead</button>`:""}</div>`;return}
 a.innerHTML=`<div class="auc" style="text-align:center"><div class="obl" style="margin:0 auto 16px">${I.logo}</div><h2 style="font-size:28px;margin-bottom:4px">myWallet</h2><p class="mut" style="margin-bottom:28px">Track. Save. Grow.</p><button class="btn aub gbtn" onclick="loginWithGoogle()">${GLOGO} Continue with Google</button><button class="btn aub" onclick="_am='in';showAuth('email')">${I.mail} Sign in with Email</button><div class="or">or</div><button class="btn s aub" onclick="loginAsGuest()">${I.us} Continue as Guest</button><p class="mut" style="margin-top:20px;font-size:12px">Guest data stays on this device. You can link an account any time in Settings.</p></div>`}
 function authGo(){const e=$("ae").value,p=$("ap").value;_am==="up"?signUpWithEmail($("an").value,e,p):loginWithEmail(e,p)}
 try{const l=document.createElement("link");l.rel="manifest";l.href=URL.createObjectURL(new Blob([JSON.stringify({name:"myWallet",short_name:"myWallet",start_url:".",display:"standalone",background_color:"#f5f6fa",theme_color:"#6c5ce7"})],{type:"application/manifest+json"}));document.head.appendChild(l)}catch(e){}
@@ -439,9 +437,126 @@ const goal=(name,g,sd,ed,dep)=>({id:uid(),name,goal:g,start:addD(today(),-sd),en
 S.sv=[goal("Emergency fund",3000,80,200,[[75,500],[55,400],[35,300],[15,400]]),goal("Trip to Bali",1500,60,120,[[50,200],[30,200],[10,220]]),goal("New laptop",1200,70,30,[[60,400],[40,400],[20,340]])];
 S.notes[addD(today(),-1)]="Paid rent early, treat myself this weekend";S.notes[addD(today(),-6)]="Dinner with family";S.notes[today()]="Check Netflix bill";
 cl();ST();applyAll();go("home");toast("Demo profile loaded")}
+/* ================= SUPABASE: AUTH + SYNC =================
+ Setup: 1) create a project at supabase.com  2) run supabase_setup.sql in the SQL editor
+        3) Auth > Providers: enable Email (+ Google, + "Allow anonymous sign-ins" for Guest)
+        4) Auth > URL Configuration: add the URL where this file is hosted to "Redirect URLs"
+        5) paste the project URL + anon/publishable key below, or in Settings > Cloud sync.
+ Never put the service_role / secret key here. With no keys, the app runs in offline demo mode. */
+const SUPABASE_URL="",SUPABASE_ANON_KEY="";
+/* Optional: Google OAuth client ID (…apps.googleusercontent.com). Enables the real Google account pop-up even without Supabase. */
+const GOOGLE_CLIENT_ID="";
+const IS_POPUP=window.name==="mwGoogle";/* this window is the Google sign-in pop-up */
+const SB_JS="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js";
+const SB_CFG=(()=>{let c={};try{c=JSON.parse(localStorage.getItem("mw_cfg"))||{}}catch(e){}return{url:SUPABASE_URL||c.url||"",key:SUPABASE_ANON_KEY||c.key||"",gid:GOOGLE_CLIENT_ID||c.gid||""}})();
+const SB_ON=!!(SB_CFG.url&&SB_CFG.key);
+let sb=null;var SYNC=null;
+SYNC={uid:null,status:"idle",msg:"",last:0,timer:0,busy:false,again:false,ch:null};
+const TOMB=new Set((()=>{try{return JSON.parse(localStorage.getItem("mw_tomb"))||[]}catch(e){return[]}})());
+const saveTomb=()=>{try{localStorage.setItem("mw_tomb",JSON.stringify([...TOMB]))}catch(e){}};
+const sbMsg=e=>(e&&e.message)||"Something went wrong";
+const sbRedirect=()=>location.origin+location.pathname;
+function sbReady(){if(sb)return true;if(SB_ON)toast("Cloud unreachable. Using offline demo mode.");return false}
+function loadScript(src){return new Promise((res,rej)=>{const e=document.createElement("script");e.src=src;e.onload=res;e.onerror=()=>rej(new Error("Could not load "+src));document.head.appendChild(e)})}
+const GIS="https://accounts.google.com/gsi/client";
+function googlePicker(){return SB_CFG.gid?gisPick():googleForm()}
+function gisPick(){return new Promise(res=>{const go=()=>{try{google.accounts.oauth2.initTokenClient({client_id:SB_CFG.gid,scope:"openid email profile",prompt:"select_account",
+callback:async r=>{if(r.error||!r.access_token){toast("Google sign-in cancelled");return res(null)}try{const u=await(await fetch("https://www.googleapis.com/oauth2/v3/userinfo",{headers:{Authorization:"Bearer "+r.access_token}})).json();res({name:u.name||(u.email||"").split("@")[0],email:(u.email||"").toLowerCase(),pic:u.picture||""})}catch(e){toast("Could not read your Google profile");res(null)}},
+error_callback:()=>res(null)}).requestAccessToken()}catch(e){toast("Google sign-in failed to start");res(null)}};
+window.google&&google.accounts?go():loadScript(GIS).then(go).catch(()=>{toast("Could not load Google sign-in");res(null)})})}
+function loadSb(){return new Promise((res,rej)=>{if(window.supabase)return res();const e=document.createElement("script");e.src=SB_JS;e.onload=res;e.onerror=()=>rej(new Error("Could not load the Supabase library"));document.head.appendChild(e)})}
+function sbUser(ses){const u=ses.user,m=u.user_metadata||{},g=(u.identities||[]).some(i=>i.provider==="google");return{type:u.is_anonymous?"guest":g?"google":"email",uid:"sb_"+u.id,sbid:u.id,sb:true,name:m.full_name||m.name||(u.email?u.email.split("@")[0]:"Guest"),email:u.email||"",pic:m.avatar_url||m.picture||""}}
+function initSb(){if(!SB_ON)return Promise.resolve();return new Promise(async res=>{window._sbRes=res;try{await loadSb();sb=window.supabase.createClient(SB_CFG.url,SB_CFG.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+/* never await Supabase calls inside this callback (deadlock): defer with setTimeout */
+sb.auth.onAuthStateChange((ev,ses)=>setTimeout(()=>sbAuthEvent(ev,ses),0))}catch(e){setStatus("error",sbMsg(e));res()}})}
+async function sbAuthEvent(ev,ses){
+if(IS_POPUP){if(ses)setTimeout(()=>window.close(),400);if(ev==="INITIAL_SESSION"&&window._sbRes){window._sbRes();window._sbRes=null}return}
+if(ev==="INITIAL_SESSION"||ev==="SIGNED_IN"){
+ if(ses&&ses.user){if(ev==="SIGNED_IN"&&SYNC.uid===ses.user.id)return;try{await sbEnter(ses,ev==="INITIAL_SESSION")}catch(e){setStatus("error",sbMsg(e))}}
+ else if(SESS&&SESS.sb)setSess(null);
+ if(ev==="INITIAL_SESSION"&&window._sbRes){window._sbRes();window._sbRes=null}}
+else if(ev==="SIGNED_OUT"){SYNC.uid=null;setStatus("idle");unsubRT();if(SESS&&SESS.sb){setSess(null);showAuth()}}
+else if(ev==="PASSWORD_RECOVERY")newPwForm();
+else if(ev==="USER_UPDATED"&&ses)sbRelink(ses)}
+async function sbEnter(ses,restore){const u=sbUser(ses);
+if(restore&&SESS&&SESS.sbid===u.sbid){SYNC.uid=u.sbid;await syncAll();subRT();return}
+SYNC.uid=u.sbid;await syncAll();dropBlank();finishLogin(u);subRT();schedulePush(500)}
+function sbRelink(ses){const u=sbUser(ses);if(!SESS||SESS.sbid!==u.sbid)return;setSess(Object.assign({},SESS,{type:u.type,email:u.email||SESS.email,name:SESS.name==="Guest"?u.name:SESS.name}));if(!S.prof.email)S.prof.email=u.email;if((!S.prof.name||S.prof.name==="Guest")&&u.type!=="guest")S.prof.name=u.name;if(!S.prof.pic&&u.pic)S.prof.pic=u.pic;ST();render()}
+/* ---- auth entry points (fall back to the offline demo functions when Supabase is off) ---- */
+/* Opens Google's account chooser immediately in a pop-up (prompt=select_account); falls back to a full-page redirect if pop-ups are blocked. */
+async function loginWithGoogle(){if(!sbReady())return demoGoogle();
+const opts={redirectTo:sbRedirect(),queryParams:{prompt:"select_account"}};
+const w=window.open("about:blank","mwGoogle","popup=yes,width=500,height=680");/* opened synchronously inside the click so it is not blocked */
+if(!w){const{error}=await sb.auth.signInWithOAuth({provider:"google",options:opts});if(error)toast(sbMsg(error));return}
+const{data,error}=await sb.auth.signInWithOAuth({provider:"google",options:Object.assign({skipBrowserRedirect:true},opts)});
+if(error||!data||!data.url){try{w.close()}catch(e){}return toast(error?sbMsg(error):"Google sign-in is not enabled in Supabase")}
+w.location.href=data.url;
+const t0=Date.now(),iv=setInterval(async()=>{try{const{data:d}=await sb.auth.getSession();if(d&&d.session){clearInterval(iv);try{w.close()}catch(e){}sbAuthEvent("SIGNED_IN",d.session)}else if(Date.now()-t0>18e4)clearInterval(iv)}catch(e){}},900)}
+async function loginWithEmail(email,pass){if(!sbReady())return demoEmail(email,pass);email=(email||"").trim();
+if(!okMail(email))return toast("Enter a valid email");if(!pass)return toast("Enter your password");
+const{error}=await sb.auth.signInWithPassword({email,password:pass});if(error)toast(sbMsg(error))}
+async function signUpWithEmail(name,email,pass){if(!sbReady())return demoSignUp(name,email,pass);email=(email||"").trim();
+if(!okMail(email))return toast("Enter a valid email");if((pass||"").length<6)return toast("Password needs 6+ characters");
+const{data,error}=await sb.auth.signUp({email,password:pass,options:{data:{full_name:(name||"").trim()},emailRedirectTo:sbRedirect()}});
+if(error)return toast(sbMsg(error));if(!data.session)modal(`<h2>Check your inbox</h2><p class="mut" style="margin-bottom:14px">We sent a confirmation link to <b>${esc(email)}</b>. Open it, then sign in.</p><button class="btn" style="width:100%" onclick="cl()">OK</button>`)}
+async function sendMagicLink(email){if(!sbReady())return demoMagic(email);email=(email||"").trim();if(!okMail(email))return toast("Enter your email first");
+const{error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:sbRedirect(),shouldCreateUser:true}});toast(error?sbMsg(error):"Magic link sent. Check your inbox.")}
+async function loginAsGuest(){if(sbReady()){const{error}=await sb.auth.signInAnonymously();if(!error)return;toast("Anonymous sign-ins are off in Supabase. Using a local guest.")}demoGuest()}
+async function logout(){ST();if(sb){try{await syncAll()}catch(e){}unsubRT();try{await sb.auth.signOut()}catch(e){}SYNC.uid=null}setSess(null);cl();showAuth()}
+async function linkGoogle(){if(!sbReady())return demoLinkGoogle();const{error}=await sb.auth.linkIdentity({provider:"google",options:{redirectTo:sbRedirect()}});if(error)toast(sbMsg(error))}
+async function linkEmailGo(){if(!sbReady())return demoLinkEmailGo();const e=$("le").value.trim(),p=$("lp").value;if(!okMail(e))return toast("Enter a valid email");if(p.length<6)return toast("Password needs 6+ characters");
+const{error}=await sb.auth.updateUser({email:e,password:p,data:{full_name:$("ln").value.trim()}});if(error)return toast(sbMsg(error));cl();modal(`<h2>Confirm your email</h2><p class="mut" style="margin-bottom:14px">We sent a link to <b>${esc(e)}</b>. Once confirmed, this guest profile becomes an email account with all its data.</p><button class="btn" style="width:100%" onclick="cl()">OK</button>`)}
+async function resetPw(email){email=(email||"").trim();if(!okMail(email))return toast("Enter your email first");if(!sbReady())return toast("Password reset needs Supabase connected");
+const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:sbRedirect()});toast(error?sbMsg(error):"Reset link sent. Check your inbox.")}
+function newPwForm(){modal(`<h2>Set a new password</h2><input id="npw" type="password" autocomplete="new-password" placeholder="At least 6 characters"><button class="btn" style="width:100%;margin-top:8px" onclick="newPwGo()">Update password</button>`)}
+async function newPwGo(){const p=$("npw").value;if(p.length<6)return toast("Password needs 6+ characters");const{error}=await sb.auth.updateUser({password:p});if(error)return toast(sbMsg(error));cl();toast("Password updated")}
+/* ---- sync: one row per profile in public.wallet_profiles, last-write-wins by upd (ms), tombstones for deletes ---- */
+function sbDirty(){if(SYNC&&SYNC.uid)schedulePush()}
+function sbTomb(id){try{const p=JSON.parse(localStorage.getItem(KEY(id))||"{}");if(p.cid){TOMB.add(p.cid);saveTomb();if(SYNC&&SYNC.uid)schedulePush()}}catch(e){}}
+function schedulePush(ms){if(!SYNC)return;clearTimeout(SYNC.timer);SYNC.timer=setTimeout(()=>SYNC.busy?SYNC.again=true:syncAll(),ms==null?1500:ms)}
+function syncLabel(){const s=SYNC.status;return s==="syncing"?"Syncing…":s==="ok"?"Synced "+new Date(SYNC.last).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):s==="offline"?"Offline. Will sync when back online":s==="error"?"Sync error: "+(SYNC.msg||""):SYNC.uid?"Cloud sync ready":"Sign in to sync"}
+function setStatus(s,m){SYNC.status=s;SYNC.msg=m||"";const e=$("syncst");if(e)e.textContent=syncLabel()}
+const syncBadge=()=>SB_ON?`<div style="display:flex;align-items:center;gap:8px;margin-top:10px"><span class="grow mut" id="syncst">${syncLabel()}</span><button class="btn s" style="padding:6px 12px" onclick="syncNow()">${I.rs} Sync</button></div>`:"";
+function syncNow(){if(!SB_ON)return toast("Connect Supabase first");if(!SYNC.uid)return toast("Sign in to sync");syncAll()}
+function dropLocal(id){IDX.list=IDX.list.filter(x=>x!==id);if(IDX.upd)delete IDX.upd[id];try{localStorage.removeItem(KEY(id))}catch(e){}delete LASTJ[id];if(IDX.cur===id){IDX.cur=IDX.list[0];S=loadP(IDX.cur)}}
+function dropBlank(){for(const id of IDX.list.slice()){if(IDX.list.length<2)break;const p=id===IDX.cur?S:loadP(id);if(!p.cid&&!p.authUid&&!p.onb&&!p.tx.length&&!p.sv.length&&!p.prof.name)dropLocal(id)}try{localStorage.setItem("mw_idx",JSON.stringify(IDX))}catch(e){}}
+async function syncAll(){if(!sb||!SYNC.uid||SYNC.busy)return;if(!navigator.onLine){setStatus("offline");return}
+SYNC.busy=true;setStatus("syncing");let refresh=false;
+try{ST();const ux=SYNC.uid,own="sb_"+ux;IDX.upd=IDX.upd||{};
+ const{data:meta,error:e1}=await sb.from("wallet_profiles").select("profile_id,upd,deleted");if(e1)throw e1;
+ const rm=new Map(meta.map(r=>[r.profile_id,r])),L=new Map();
+ IDX.list.forEach(id=>{const p=id===IDX.cur?S:loadP(id);if(p.cid)L.set(p.cid,id)});
+ const rows=[...TOMB].map(c=>({user_id:ux,profile_id:c,data:null,upd:Date.now(),deleted:true})),need=[];
+ for(const[c,r]of rm){const id=L.get(c);
+  if(r.deleted){if(id&&IDX.list.length>1&&(IDX.upd[id]||0)<=r.upd){if(id===IDX.cur)refresh=true;dropLocal(id)}continue}
+  if(TOMB.has(c))continue;
+  if(!id||r.upd>(IDX.upd[id]||0))need.push(c)}
+ if(need.length){const{data:full,error:e2}=await sb.from("wallet_profiles").select("profile_id,data,upd").in("profile_id",need);if(e2)throw e2;
+  for(const r of full){if(!r.data)continue;const id=L.get(r.profile_id)||r.profile_id;localStorage.setItem(KEY(id),JSON.stringify(r.data));if(!IDX.list.includes(id))IDX.list.push(id);IDX.upd[id]=r.upd;LASTJ[id]=JSON.stringify(loadP(id));if(id===IDX.cur){S=loadP(id);refresh=true}}}
+ for(const id of IDX.list.slice()){const p=id===IDX.cur?S:loadP(id);if(!p.onb||(p.authUid&&p.authUid!==own))continue;
+  if(!p.cid||!p.authUid){p.cid=p.cid||uid()+uid();p.authUid=own;if(id===IDX.cur)ST();else{localStorage.setItem(KEY(id),JSON.stringify(p));LASTJ[id]=JSON.stringify(loadP(id))}IDX.upd[id]=Date.now()}
+  const r=rm.get(p.cid),lu=IDX.upd[id]||(IDX.upd[id]=Date.now());
+  if(!r||lu>r.upd)rows.push({user_id:ux,profile_id:p.cid,data:p,upd:lu,deleted:false})}
+ if(rows.length){const{error:e3}=await sb.from("wallet_profiles").upsert(rows,{onConflict:"user_id,profile_id"});if(e3)throw e3;TOMB.clear();saveTomb()}
+ localStorage.setItem("mw_idx",JSON.stringify(IDX));SYNC.last=Date.now();setStatus("ok");if(refresh)applyAll()
+}catch(e){setStatus("error",sbMsg(e))}finally{SYNC.busy=false;if(SYNC.again){SYNC.again=false;schedulePush(300)}}}
+function subRT(){unsubRT();try{SYNC.ch=sb.channel("wallet-"+SYNC.uid).on("postgres_changes",{event:"*",schema:"public",table:"wallet_profiles",filter:"user_id=eq."+SYNC.uid},()=>schedulePush(800)).subscribe()}catch(e){}}
+function unsubRT(){try{if(SYNC.ch&&sb){sb.removeChannel(SYNC.ch)}}catch(e){}SYNC.ch=null}
+addEventListener("online",()=>schedulePush(500));document.addEventListener("visibilitychange",()=>{if(!document.hidden)schedulePush(400)});
+/* ---- Settings > Cloud sync ---- */
+const keyRole=k=>{try{return JSON.parse(atob(k.split(".")[1].replace(/-/g,"+").replace(/_/g,"/"))).role}catch(e){return""}};
+function sbCfgSave(){const u=$("sbu").value.trim().replace(/\/+$/,""),k=$("sbk").value.trim(),g=$("sbg").value.trim();
+if(u||k){if(!/^https:\/\/[^\s]+$/.test(u))return toast("Enter your https project URL");if(!k)return toast("Paste your anon / publishable key");if(keyRole(k)==="service_role"||k.startsWith("sb_secret_"))return toast("That is a secret key. Use the anon / publishable key.")}
+if(g&&!/\.apps\.googleusercontent\.com$/.test(g))return toast("Client ID should end with .apps.googleusercontent.com");
+try{localStorage.setItem("mw_cfg",JSON.stringify({url:u,key:k,gid:g}))}catch(e){}location.reload()}
+function sbCfgClear(){try{localStorage.removeItem("mw_cfg")}catch(e){}location.reload()}
+const cfgSet=()=>{const fx=!!(SUPABASE_URL&&SUPABASE_ANON_KEY),fg=!!GOOGLE_CLIENT_ID;return it("bk","Cloud sync & Google",SB_ON?"Supabase connected":SB_CFG.gid?"Google sign-in ready":"Not connected",`<p class="mut" style="margin-bottom:8px">${SB_ON?"Google, email and guest sign-ins sync your profiles across devices.":"Connect Supabase to sync across devices. Add a Google client ID to get the real Google account chooser."}</p><label class="lb">Supabase project URL</label><input id="sbu" placeholder="https://xxxx.supabase.co" value="${esc(SB_CFG.url)}" ${fx?"readonly":""}><label class="lb">Supabase anon / publishable key</label><input id="sbk" placeholder="eyJ... or sb_publishable_..." value="${esc(SB_CFG.key)}" ${fx?"readonly":""}><label class="lb">Google client ID (optional, no-Supabase mode)</label><input id="sbg" placeholder="1234-abc.apps.googleusercontent.com" value="${esc(SB_CFG.gid)}" ${fg?"readonly":""}><div class="g2" style="margin-top:8px"><button class="btn s" onclick="sbCfgClear()">Disconnect</button><button class="btn" onclick="sbCfgSave()">Save &amp; reload</button></div>${SB_ON?`<p class="mut" id="syncst" style="margin-top:10px">${syncLabel()}</p><button class="btn s" style="width:100%" onclick="syncNow()">${I.rs} Sync now</button>`:""}`)};
+if(SB_CFG.gid&&!SB_ON)loadScript(GIS).catch(()=>{});/* preload so the pop-up opens inside the click */
+const SB_READY=initSb();
+if(IS_POPUP){const d=document.createElement("div");d.style.cssText="position:fixed;inset:0;z-index:999;display:grid;place-items:center;background:#fff;color:#444;font:600 16px system-ui";d.textContent="Signing you in…";document.body.appendChild(d)}
 if(S.prof&&S.prof.name)S.onb=1;
 $("fab").innerHTML=IV.pl;nav();go("home");
 const SP=$("spl");chime();setTimeout(()=>{if(AC&&AC.state!=="running")$("sh").textContent="Tap for sound"},500);
 addEventListener("pointerdown",()=>{if(AC&&AC.state!=="running"&&!SP.classList.contains("out"))AC.resume()});
-setTimeout(()=>{SP.classList.add("out");if(!SESS)showAuth();else if(!S.onb)showOb()},2800);
+Promise.all([new Promise(r=>setTimeout(r,2800)),Promise.race([SB_READY,new Promise(r=>setTimeout(r,6000))])]).then(()=>{SP.classList.add("out");if(!SESS)showAuth();else if(!S.onb)showOb()});
 </script></body></html>
