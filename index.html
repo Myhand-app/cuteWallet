@@ -443,7 +443,7 @@ cl();ST();applyAll();go("home");toast("Demo profile loaded")}
         4) Auth > URL Configuration: add the URL where this file is hosted to "Redirect URLs"
         5) paste the project URL + anon/publishable key below, or in Settings > Cloud sync.
  Never put the service_role / secret key here. With no keys, the app runs in offline demo mode. */
-const SUPABASE_URL="https://fiicqemknsjrkozyqqjm.supabase.co",SUPABASE_ANON_KEY="";/* paste your anon/public key here, or in Settings > Cloud sync */
+const SUPABASE_URL="https://fiicqemknsjrkozyqqjm.supabase.co",SUPABASE_ANON_KEY="sb_publishable_ey0q9oluO41xgaNfe2KDnw_VLS_PfOu";/* publishable key: safe to ship in client code (data is protected by RLS) */
 const SB_TABLE="user_data";/* one row per user: id (uuid) + payload (jsonb) */
 /* Optional: Google OAuth client ID (…apps.googleusercontent.com). Enables the real Google account pop-up even without Supabase. */
 const GOOGLE_CLIENT_ID="";
