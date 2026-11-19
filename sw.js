@@ -5,7 +5,7 @@
  * - Supabase API / auth and Google sign-in requests are NEVER touched (always go to the network).
  * Bump VERSION whenever you change icons, manifest.json or offline.html.
  */
-const VERSION = 'v1.4';
+const VERSION = 'v1.5';
 const STATIC = 'mywallet-static-' + VERSION;
 const RUNTIME = 'mywallet-runtime-' + VERSION;
 const abs = (p) => new URL(p, self.location.href).href;
